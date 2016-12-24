@@ -21,7 +21,7 @@
             <th><a href="{{ url_for('render_app_page', guid=result.guid) }}">{{ result.title }}</a></th>
             <th>{{ result.author }}</th>
             <th>{{ result.publish_ts }}</th>
-            <th>{{ result.category }}</th>
+            <th>{{ result.category.value }}</th>
           </tr>
         {% endfor %}
       </table>

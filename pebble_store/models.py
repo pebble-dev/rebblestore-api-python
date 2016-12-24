@@ -64,10 +64,10 @@ class PebbleCategory(enum.Enum):
 
     @classmethod
     def get_by_value(cls, value):
-        for k, v in cls.__dict__.items():
-            if v == value:
+        for k, v in cls._member_map_.items():
+            if v.value == value:
                 return getattr(cls, k)
-
+        raise KeyError
 
 class Application(TableBase):
     # TODO: Currently ignoring but should maybe handle:

@@ -89,7 +89,7 @@ def search(search):
     query = vector_search(query, search)
     for result in query:
         click.echo('{} ({}) {}'.format(result.title,
-                                       result.category,
+                                       result.category.value,
                                        result.author))
 
 
