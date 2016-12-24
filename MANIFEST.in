@@ -1,0 +1,2 @@
+recursive-include pebble_store/templates *
+recursive-include pebble_store/static *

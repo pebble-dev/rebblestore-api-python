@@ -1,0 +1,31 @@
+<html>
+  <head>
+  </head>
+  <body>
+    <form action="{{ url_for('render_root') }}" method="GET">
+      <input name="q" type="text">
+      <input type="submit">
+    </form>
+    {% if results %}
+      <table>
+        <tr>
+          <th>Title</th>
+          <th>Author</th>
+          <th>Publish Date</th>
+          <th>Category</th>
+
+        </tr>
+
+        {% for result in results %}
+          <tr>
+            <th><a href="{{ url_for('render_app_page', guid=result.guid) }}">{{ result.title }}</a></th>
+            <th>{{ result.author }}</th>
+            <th>{{ result.publish_ts }}</th>
+            <th>{{ result.category }}</th>
+          </tr>
+        {% endfor %}
+      </table>
+    {% endif %}
+
+  </body>
+</html>
