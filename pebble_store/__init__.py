@@ -78,6 +78,21 @@ def initdb(source, drop_old):
     session.commit()
 
 
+
+@app.cli.command()
+@click.argument('search', nargs=-1)
+def search(search):
+    session, db = get_db()
+    search = ' '.join(search)
+
+    query = session.query(Application)
+    query = vector_search(query, search)
+    for result in query:
+        click.echo('{} ({}) {}'.format(result.title,
+                                       result.category,
+                                       result.author))
+
+
 @app.teardown_appcontext
 def shutdown_session(response_or_exception):
     if hasattr(g, 'db'):
