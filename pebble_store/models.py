@@ -1,6 +1,7 @@
 import enum
 import uuid
 
+from flask import g
 import sqlalchemy
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
@@ -69,6 +70,7 @@ class PebbleCategory(enum.Enum):
                 return getattr(cls, k)
         raise KeyError
 
+
 class Application(TableBase):
     # TODO: Currently ignoring but should maybe handle:
     # capabilities, changelog, compatibility, images, links?,
@@ -101,3 +103,10 @@ def get_connection():
     Session = sessionmaker(bind=db)
     session = Session()
     return session, db
+
+
+def get_db():
+    """get the connection to the db, but cache it on the g object"""
+    if not hasattr(g, 'db'):
+        g.db = get_connection()
+    return g.db[0], g.db[1]

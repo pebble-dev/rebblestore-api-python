@@ -10,7 +10,15 @@ setup(
     install_requires=['Flask',
                       'arrow',
                       'click',
+                      'requests',
                       'sqlalchemy',
                       'sqlalchemy-searchable',
-                      'psycopg2']
+                      'psycopg2'],
+    entry_points={
+        'flask.commands': [
+            'initdb=pebble_store.cli:initdb',
+            'search=pebble_store.cli:search',
+            'run=pebble_store.cli:run'
+        ],
+    }
 )

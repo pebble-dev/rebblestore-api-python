@@ -2,7 +2,7 @@
   <head>
   </head>
   <body>
-    <form action="{{ url_for('render_root') }}" method="GET">
+    <form action="{{ url_for('home.render_root') }}" method="GET">
       <input name="q" type="text">
       <input type="submit">
     </form>
@@ -18,7 +18,7 @@
 
         {% for result in results %}
           <tr>
-            <th><a href="{{ url_for('render_app_page', guid=result.guid) }}">{{ result.title }}</a></th>
+            <th><a href="{{ url_for('home.render_app_page', guid=result.guid) }}">{{ result.title }}</a></th>
             <th>{{ result.author }}</th>
             <th>{{ result.publish_ts }}</th>
             <th>{{ result.category.value }}</th>
