@@ -95,6 +95,34 @@ class Application(TableBase):
             return value[:max_len]
         return value
 
+    def to_json(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            # TODO: category id for frontend -_-
+            'category': self.category.value,
+            'description': self.description,
+            # TODO: flesh these out
+            'hearts': 0,
+            'companions': {
+                'android': None,
+                'ios': None
+            },
+            'list_image': {
+                '80x80': '',
+                '144x144': ''
+            },
+            'screenshot_hardware': 'basalt',
+            'screenshot_images': [
+                {'0x0': ''}
+            ],
+            'icon_image': {
+                '28x28': '',
+                '48x48': ''
+            },
+            'capabilities': []
+        }
+
 
 def get_connection():
     db = sqlalchemy.create_engine(
