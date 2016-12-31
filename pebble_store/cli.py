@@ -1,5 +1,6 @@
 from io import StringIO
 import json
+import operator
 import os
 
 import arrow
@@ -7,6 +8,7 @@ import click
 from flask.cli import with_appcontext
 import requests
 from sqlalchemy_searchable import search as vector_search
+from tabulate import tabulate
 
 from . import create_app
 from .models import Application, get_db, PebbleCategory, TableBase
@@ -163,10 +165,15 @@ def search(search):
 
     query = session.query(Application)
     query = vector_search(query, search)
+
+    to_print = []
     for result in query:
-        click.echo('==> {} ({}) {}'.format(result.title,
-                                            result.category.value,
-                                            result.author))
+        to_print.append((result.title,
+                         result.category.value,
+                         result.author,
+                         result.hearts))
+    to_print.sort(key=operator.itemgetter(-1))
+    click.echo(tabulate(to_print, tablefmt='fancy_grid'))
 
 
 @click.command()

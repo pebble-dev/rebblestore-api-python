@@ -13,6 +13,7 @@ setup(
                       'requests',
                       'sqlalchemy',
                       'sqlalchemy-searchable',
+                      'tabulate',
                       'psycopg2',
                       'pillow'],
     entry_points={
