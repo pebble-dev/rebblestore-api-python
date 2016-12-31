@@ -13,7 +13,8 @@ setup(
                       'requests',
                       'sqlalchemy',
                       'sqlalchemy-searchable',
-                      'psycopg2'],
+                      'psycopg2',
+                      'pillow'],
     entry_points={
         'flask.commands': [
             'initdb=pebble_store.cli:initdb',

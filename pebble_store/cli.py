@@ -1,3 +1,4 @@
+from io import StringIO
 import json
 import os
 
@@ -17,6 +18,8 @@ _REQUESTS_SESSION = None
 
 
 def _download_images(shot_source, shot_dir):
+    from PIL import Image
+
     global _REQUESTS_SESSION
     os.mkdir(shot_dir)
     if not _REQUESTS_SESSION:
@@ -36,11 +39,14 @@ def _download_images(shot_source, shot_dir):
             ext = content_type[6:]
         else:
             continue
-        filename = '{}.{}'.format(str(idx), ext)
-        save_path = os.path.join(shot_dir, filename)
-        with open(save_path, 'wb') as f:
-            click.echo('==> Writing {}'.format(save_path))
-            f.write(response.content)
+
+        sio = StringIO()
+        sio.write(response.content)
+        img = Image(sio)
+        w, h = img.size
+
+        filename = '{}_{}x{}'.format(idx, w, h)
+        img.save(filename, ext)
 
 
 def _load_file(filename):

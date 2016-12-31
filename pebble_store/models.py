@@ -82,6 +82,7 @@ class Application(TableBase):
     author = Column(String(length=120))
     title = Column(String(length=256))
     description = Column(String)
+    hearts = Column(Integer, default=0)
     source = Column(String(length=256))
     category = Column(Enum(PebbleCategory))
     create_ts = Column(DateTime)
@@ -103,7 +104,7 @@ class Application(TableBase):
             'category': self.category.value,
             'description': self.description,
             # TODO: flesh these out
-            'hearts': 0,
+            'hearts': self.hearts,
             'companions': {
                 'android': None,
                 'ios': None
