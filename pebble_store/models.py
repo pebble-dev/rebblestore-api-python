@@ -1,14 +1,16 @@
-import enum
 import uuid
 
+import arrow
 from flask import g
 import sqlalchemy
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import configure_mappers, sessionmaker, validates
-from sqlalchemy.types import CHAR, DateTime, Enum, TypeDecorator
+from sqlalchemy.orm import (configure_mappers, relationship,
+                            scoped_session, sessionmaker, validates)
+from sqlalchemy.types import Boolean, CHAR, TypeDecorator
+from sqlalchemy.schema import ForeignKey
 from sqlalchemy_searchable import make_searchable
-from sqlalchemy_utils.types import TSVectorType
+from sqlalchemy_utils.types import ArrowType, ChoiceType, TSVectorType
 
 Column = sqlalchemy.Column
 Integer = sqlalchemy.Integer
@@ -52,23 +54,32 @@ class GUID(TypeDecorator):
             return uuid.UUID(value)
 
 
-class PebbleCategory(enum.Enum):
-    faces = 'Faces'
-    tools = 'Tools & Utilities'
-    daily = 'Daily'
-    games = 'Games'
-    health = 'Health & Fitness'
-    remotes = 'Remotes'
-    notifications = 'Notifications'
-    index = 'Index'
-    getsomeapps = 'GetSomeApps'
+ApplicationCollection = sqlalchemy.Table('application_tag', TableBase.metadata,
+                                         Column('collection_id',
+                                                ForeignKey('collection.id')),
+                                         Column('application_id',
+                                                ForeignKey('application.id')))
 
-    @classmethod
-    def get_by_value(cls, value):
-        for k, v in cls._member_map_.items():
-            if v.value == value:
-                return getattr(cls, k)
-        raise KeyError
+
+class Collection(TableBase):
+    __tablename__ = 'collection'
+    __tableargs__ = (
+        sqlalchemy.UniqueConstraint('name', 'type')
+    )
+
+    TYPES = [
+        ('tag', 'Tag'),
+        ('category', 'Category')
+    ]
+
+    id = Column(Integer, primary_key=True)
+    type = Column(ChoiceType(TYPES))
+    name = Column(String(length=50))
+    featured = Column(Boolean, default=False)
+    create_ts = Column(ArrowType, default=arrow.utcnow)
+    modify_ts = Column(ArrowType, default=arrow.utcnow)
+    applications = relationship('Application', secondary=ApplicationCollection,
+                                back_populates='collections')
 
 
 class Application(TableBase):
@@ -84,10 +95,13 @@ class Application(TableBase):
     description = Column(String)
     hearts = Column(Integer, default=0)
     source = Column(String(length=256))
-    category = Column(Enum(PebbleCategory))
-    create_ts = Column(DateTime)
-    publish_ts = Column(DateTime)
+    create_ts = Column(ArrowType, default=arrow.utcnow)
+    publish_ts = Column(ArrowType, default=arrow.utcnow)
     search_vector = Column(TSVectorType('author', 'title', 'description'))
+
+    collections = relationship('Collection', secondary=ApplicationCollection,
+                               back_populates='applications')
+    files = relationship('File', back_populates='application')
 
     @validates('author', 'title', 'source')
     def validate_code(self, key, value):
@@ -100,8 +114,6 @@ class Application(TableBase):
         return {
             'id': self.id,
             'title': self.title,
-            # TODO: category id for frontend -_-
-            'category': self.category.value,
             'description': self.description,
             # TODO: flesh these out
             'hearts': self.hearts,
@@ -125,13 +137,35 @@ class Application(TableBase):
         }
 
 
+class File(TableBase):
+    __tablename__ = 'file'
+    TYPES = [
+        ('header', 'header'),
+        ('icon', 'icon'),
+        ('list', 'list'),
+        ('screenshot', 'screenshot'),
+        ('pbw', 'pbw'),
+    ]
+
+    id = Column(Integer, primary_key=True)
+    sha256 = Column(String(length=64), unique=True)
+    application_id = Column(Integer, ForeignKey('application.id'),
+                            nullable=False)
+    type = Column(ChoiceType(TYPES))
+    path = Column(String)
+    image_width = Column(Integer, default=0)
+    image_height = Column(Integer, default=0)
+
+    application = relationship('Application', back_populates='files')
+
+
 def get_connection():
     db = sqlalchemy.create_engine(
         'postgresql://pebble:pebble@localhost/pebble_app', echo=False)
     configure_mappers()
-    Session = sessionmaker(bind=db)
-    session = Session()
-    return session, db
+    Session = scoped_session(sessionmaker(bind=db))
+    # session = Session()
+    return Session, db
 
 
 def get_db():

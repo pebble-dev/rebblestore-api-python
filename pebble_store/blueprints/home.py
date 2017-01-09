@@ -8,7 +8,8 @@ bp = Blueprint('home', __name__, url_prefix='/home')
 
 @bp.route('/apps')
 def render_root():
-    session, db = get_db()
+    Session, db = get_db()
+    session = Session()
     applications = [x.to_json() for x in session.query(Application).all()]
 
     rv = {
