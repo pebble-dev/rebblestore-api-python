@@ -57,10 +57,7 @@ def _download_images(shot_source, shot_dir):
 @memoized
 def _get_or_create_collection_obj(session, name, type='category'):
     """Get a collection object from the database or create a new
-    one from the provided options, defaulting the others.
-
-    NOTE: Calls flush to populate a collection's id in the case that
-    a new object is created, but does not call commit"""
+    one from the provided options, defaulting the others."""
 
     q = session.query(Collection).filter(Collection.name == name,
                                          Collection.type == type)
@@ -70,7 +67,7 @@ def _get_or_create_collection_obj(session, name, type='category'):
             name=name,
             type=type,
             featured=False)
-        session.flush()
+        session.add(coll)
     return coll
 
 
@@ -167,15 +164,15 @@ def _load_json_file(session, path, pbw_path=None):
                       publish_ts=publish_ts,
                       collections=[category],
                       hearts=contents['hearts'])
-    session.add(app)
-    session.flush()
 
     # TODO: Screenshots etc.
     if pbw_path:
-        pbw = File(application_id=app.id,
+        pbw = File(application=app,
                    type='pbw',
                    path=pbw_path)
         session.add(pbw)
+    session.add(app)
+    session.flush()
 
     return app, path, contents
 
