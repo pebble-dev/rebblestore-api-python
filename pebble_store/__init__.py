@@ -3,7 +3,7 @@ from flask import Flask, g
 
 def teardown_session(response_or_exception):
     if hasattr(g, 'db'):
-        g.db[0].close()
+        g.db[0].remove()
     return response_or_exception
 
 
