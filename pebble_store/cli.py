@@ -263,7 +263,15 @@ def search(search):
 @click.command()
 @click.option('--port', '-p', default=5000, type=int)
 @click.option('--host', '-h', default='0.0.0.0')
-def run(port, host):
+@click.option('--config', '-c',
+              type=click.Path(exists=True, file_okay=True, resolve_path=False))
+def run(port, host, config):
     """Run a development server"""
-    app = create_app()
+    if config:
+        config = os.path.abspath(os.path.expanduser(config))
+    else:
+        config = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                              'app_debug.cfg')
+
+    app = create_app(config=config)
     app.run(host=host, port=port)

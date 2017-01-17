@@ -22,10 +22,12 @@ def register_blueprints(app, mod, bp_var_name, prefix_var_name):
     return rv
 
 
-def create_app():
+def create_app(config='app_debug.cfg'):
     from . import blueprints
 
     app = Flask(__name__)
+    if config:
+        app.config.from_pyfile(config)
     register_blueprints(app, blueprints, 'bp', 'prefix')
     app.teardown_appcontext_funcs = [teardown_session]
     return app
