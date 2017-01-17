@@ -10,13 +10,15 @@ setup(
     install_requires=['arrow',
                       'click',
                       'Flask',
+                      'flask-restful',
                       'pillow',
                       'psycopg2',
                       'requests',
                       'sqlalchemy',
                       'sqlalchemy-searchable',
                       'sqlalchemy-utils',
-                      'tabulate'],
+                      'tabulate',
+                      'webargs'],
     entry_points={
         'flask.commands': [
             'populatedb=pebble_store.cli:populatedb',

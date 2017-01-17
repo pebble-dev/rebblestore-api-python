@@ -1,7 +1,7 @@
 import uuid
 
 import arrow
-from flask import g
+from flask import current_app, g
 import sqlalchemy
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
@@ -81,6 +81,16 @@ class Collection(TableBase):
     applications = relationship('Application', secondary=ApplicationCollection,
                                 back_populates='collections')
 
+    def to_json(self):
+        return {
+            'id': self.id,
+            'type': self.type.value,
+            'name': self.name,
+            'featured': self.featured,
+            'create_ts': self.create_ts.isoformat(),
+            'modify_ts': self.modify_ts.isoformat(),
+            'applications': []
+        }
 
 class Application(TableBase):
     # TODO: Currently ignoring but should maybe handle:
