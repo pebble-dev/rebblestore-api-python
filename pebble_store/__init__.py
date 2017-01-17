@@ -7,17 +7,16 @@ def teardown_session(response_or_exception):
     return response_or_exception
 
 
-def register_blueprints(app, mod, bp_var_name, prefix_var_name):
+def register_blueprints(app, mod, bp_var_name):
     rv = []
     submods = {x for x in dir(mod) if not x[:2] == '__'}
     for submod in submods:
         submod = getattr(mod, submod)
         try:
             bp = getattr(submod, bp_var_name)
-            prefix = getattr(submod, prefix_var_name, None)
         except AttributeError:
             continue
-        app.register_blueprint(bp, url_prefix=prefix)
+        app.register_blueprint(bp)
         rv.append(bp)
     return rv
 
@@ -28,6 +27,6 @@ def create_app(config='app_debug.cfg'):
     app = Flask(__name__)
     if config:
         app.config.from_pyfile(config)
-    register_blueprints(app, blueprints, 'bp', 'prefix')
+    register_blueprints(app, blueprints, 'bp')
     app.teardown_appcontext_funcs = [teardown_session]
     return app
