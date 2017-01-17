@@ -159,17 +159,23 @@ class File(TableBase):
     application = relationship('Application', back_populates='files')
 
 
-def get_connection():
+def get_connection(host, db, user, password):
     db = sqlalchemy.create_engine(
-        'postgresql://pebble:pebble@localhost/pebble_app', echo=False)
+        'postgresql://{user}:{password}@{host}/{db}'.format(
+            user=user, password=password, host=host, db=db),
+        echo=False)
     configure_mappers()
     Session = scoped_session(sessionmaker(bind=db))
-    # session = Session()
     return Session, db
 
 
 def get_db():
     """get the connection to the db, but cache it on the g object"""
     if not hasattr(g, 'db'):
-        g.db = get_connection()
+        host = current_app.config.get('DB_HOST', 'localhost')
+        db = current_app.config.get('DB_DB', 'rebble')
+        user = current_app.config.get('DB_USER', 'rebble')
+        password = current_app.config.get('DB_PASSWORD', 'rebble')
+        g.db = get_connection(host, db, user, password)
+
     return g.db[0], g.db[1]
