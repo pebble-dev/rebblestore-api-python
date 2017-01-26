@@ -1,23 +1,19 @@
-import imghdr
 from io import StringIO
 import json
-import operator
+from multiprocessing.pool import ThreadPool
 import os
+import random
+import uuid
 
 import arrow
 import click
 from flask.cli import with_appcontext
 from PIL import Image
 import requests
-from sqlalchemy_searchable import search as vector_search
-from tabulate import tabulate
 from unstdlib.standard.functools_ import memoized
 
-from . import create_app
-from .models import Application, Collection, File, get_db, TableBase
-from .util import sha256_file
-
-from multiprocessing.pool import ThreadPool
+from ..models import Application, Collection, File, get_db, TableBase  # , Tag
+from .. import util
 
 
 _REQUESTS_SESSION = None
@@ -77,7 +73,7 @@ def _load_file(filename):
         return contents['data'][0]
 
 
-def _resolve_source(ctx, param, value):
+def _resolve_source(value):
     if not value:
         if os.path.isdir('data/'):
             click.echo('==> No source provided')
@@ -124,7 +120,7 @@ def _populate_tags(session):
 def _create_file_obj(fullpath, file_type):
     w = None
     h = None
-    sha256 = sha256_file(fullpath)
+    sha256 = util.sha256_file(fullpath)
 
     try:
         img = Image.open(fullpath)
@@ -203,15 +199,45 @@ def _get_images(source):
     pool.join()
 
 
-@click.command()
-@click.option('--source', type=click.Path(exists=True,
-                                          file_okay=False,
-                                          dir_okay=True,
-                                          resolve_path=True),
-              callback=_resolve_source)
-@with_appcontext
-def populatedb(source):
+def _populate_dummy():
+    """Generate dummy data for use in testing"""
     import pebble_store
+    app = pebble_store.create_app()
+
+    Session, db = get_db()
+
+    TableBase.metadata.drop_all(db)
+    TableBase.metadata.create_all(db, checkfirst=True)
+
+    session = Session()
+    apps = []
+    for i in range(0, 10):
+        # Start with 10 applications
+        app = Application(guid=uuid.uuid4(),
+                          author='author_{}'.format(i),
+                          title='aplication_{}'.format(i),
+                          description='This is application_{}'.format(i),
+                          hearts=i*10)
+        session.add(app)
+        apps.append(app)
+
+    for i in range(0, 10):
+        # now collections
+        coll_type = random.choice(Collection.TYPES)
+        featured = random.choice((True, False))
+        our_apps = [apps[i], apps[9 - i]]
+
+        collection = Collection(type=coll_type,
+                                name='collection_{}'.format(i),
+                                featured=featured,
+                                applications=our_apps)
+        session.add(collection)
+    session.commit()
+
+
+def _populate_real(source):
+    import pebble_store
+
     _get_images(source)
 
     app = pebble_store.create_app()
@@ -237,41 +263,38 @@ def populatedb(source):
             app, fullpath, contents = _load_json_file(session, fullpath,
                                                       pbw_path=pbw_files[0])
 
+        # for f in files:
+        #     fullpath = os.path.join(path, f)
+        #     if f.endswith('.json') and not f.startswith('.#'):
+        #         app, fullpath, contents = _load_json_file(session, fullpath)
+        #     else:
+        #         image_type = imghdr.what(fullpath)
+        #         if image_type:
+        #             file_type = None
+        #             for type in ['screenshot', 'header', 'list', 'icon']:
+        #                 if '{}{}s{}'.format(os.sep, type, os.sep) in fullpath:
+        #                     file_type = type
+        #                     break
+        #             f_obj = _create_file_obj(fullpath, file_type)
+        #             session.add(f_obj)
+
     session.commit()
 
 
 @click.command()
-@click.argument('search', nargs=-1)
+@click.option('--source', type=click.Path(exists=True,
+                                          file_okay=False,
+                                          dir_okay=True,
+                                          resolve_path=True),
+              help='Folder to utilize to populate the database. --dummy must '
+                   'be False for this option to make sense')
+@click.option('--dummy', is_flag=True,
+              help='Whether or not to generate dummy data to '
+              'populate the database')
 @with_appcontext
-def search(search):
-    session, db = get_db()
-    search = ' '.join(search)
-
-    query = session.query(Application)
-    query = vector_search(query, search)
-
-    to_print = []
-    for result in query:
-        to_print.append((result.title,
-                         [x.name for x in result.collections],
-                         result.author,
-                         result.hearts))
-    to_print.sort(key=operator.itemgetter(-1))
-    click.echo(tabulate(to_print, tablefmt='fancy_grid'))
-
-
-@click.command()
-@click.option('--port', '-p', default=5000, type=int)
-@click.option('--host', '-h', default='0.0.0.0')
-@click.option('--config', '-c',
-              type=click.Path(exists=True, file_okay=True, resolve_path=False))
-def run(port, host, config):
-    """Run a development server"""
-    if config:
-        config = os.path.abspath(os.path.expanduser(config))
+def populatedb(source, dummy):
+    if dummy:
+        _populate_dummy()
     else:
-        config = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                              'app_debug.cfg')
-
-    app = create_app(config=config)
-    app.run(host=host, port=port)
+        source = _resolve_source(source)
+        _populate_real(source)

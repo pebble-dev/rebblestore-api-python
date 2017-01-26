@@ -92,6 +92,7 @@ class Collection(TableBase):
             'applications': []
         }
 
+
 class Application(TableBase):
     # TODO: Currently ignoring but should maybe handle:
     # capabilities, changelog, compatibility, images, links?,

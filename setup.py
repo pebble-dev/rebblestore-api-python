@@ -23,7 +23,8 @@ setup(
         'flask.commands': [
             'populatedb=pebble_store.cli:populatedb',
             'search=pebble_store.cli:search',
-            'run=pebble_store.cli:run'
+            'run=pebble_store.cli:run',
+            'list_routes=pebble_store.cli:list_routes',
         ],
     }
 )
