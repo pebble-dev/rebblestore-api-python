@@ -17,6 +17,7 @@ def run(port, host, config):
         config = os.path.abspath(os.path.expanduser(config))
     else:
         config = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                              '..',
                               'app_debug.cfg')
 
     app = create_app(config=config)
