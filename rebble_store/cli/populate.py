@@ -201,8 +201,8 @@ def _get_images(source):
 
 def _populate_dummy():
     """Generate dummy data for use in testing"""
-    import pebble_store
-    app = pebble_store.create_app()
+    import rebble_store
+    app = rebble_store.create_app()
 
     Session, db = get_db()
 
@@ -236,11 +236,11 @@ def _populate_dummy():
 
 
 def _populate_real(source):
-    import pebble_store
+    import rebble_store
 
     _get_images(source)
 
-    app = pebble_store.create_app()
+    app = rebble_store.create_app()
     # download_results = []
     # pool = ThreadPool(processes=10)
     Session, db = get_db()

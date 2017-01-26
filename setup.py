@@ -4,7 +4,7 @@ setup(
     name='Pebble Store',
     version='0.1',
     long_description=__doc__,
-    packages=['pebble_store'],
+    packages=['rebble_store'],
     include_package_data=True,
     zip_safe=False,
     install_requires=['arrow',
@@ -21,10 +21,10 @@ setup(
                       'webargs'],
     entry_points={
         'flask.commands': [
-            'populatedb=pebble_store.cli:populatedb',
-            'search=pebble_store.cli:search',
-            'run=pebble_store.cli:run',
-            'list_routes=pebble_store.cli:list_routes',
+            'populatedb=rebble_store.cli:populatedb',
+            'search=rebble_store.cli:search',
+            'run=rebble_store.cli:run',
+            'list_routes=rebble_store.cli:list_routes',
         ],
     }
 )
