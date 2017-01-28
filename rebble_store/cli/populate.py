@@ -151,15 +151,17 @@ def _load_json_file(session, path, pbw_path=None):
         publish_ts = None
 
     click.echo('==> Adding {}...'.format(contents['title']))
+    author = User(name=contents['author'])
+    session.add(author)
     app = Application(guid=contents['uuid'],
-                      author=contents['author'],
+                      author=author,
                       title=contents['title'],
                       description=contents['description'],
                       source=contents['source'],
                       create_ts=create_ts,
                       publish_ts=publish_ts,
                       collections=[category],
-                      hearts=contents['hearts'])
+                      hearts=int(contents['hearts']))
 
     # TODO: Screenshots etc.
     if pbw_path:

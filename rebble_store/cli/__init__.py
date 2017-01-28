@@ -2,10 +2,10 @@ import operator
 
 import click
 from flask.cli import with_appcontext
-from sqlalchemy_searchable import search as vector_search
+from sqlalchemy_searchable import parse_search_query
 from tabulate import tabulate
 
-from ..models import Application, get_db
+from ..models import Application, ft_search_vector, get_db, User
 
 from .populate import getimgs, populatedb
 from .run import run, list_routes
@@ -18,14 +18,14 @@ def search(search):
     session, db = get_db()
     search = ' '.join(search)
 
-    query = session.query(Application)
-    query = vector_search(query, search)
+    apps = session.query(Application).join(User).filter(
+        ft_search_vector.match(parse_search_query(search)))
 
     to_print = []
-    for result in query:
+    for result in apps:
         to_print.append((result.title,
-                         [x.name for x in result.collections],
-                         result.author,
+                         ', '.join([x.name for x in result.collections]),
+                         result.author.name,
                          result.hearts))
     to_print.sort(key=operator.itemgetter(-1))
     click.echo(tabulate(to_print, tablefmt='fancy_grid'))

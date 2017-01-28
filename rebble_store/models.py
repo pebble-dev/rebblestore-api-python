@@ -93,6 +93,17 @@ class Collection(TableBase):
         }
 
 
+class User(TableBase):
+    # TODO: flesh this out and make it usable
+    __tablename__ = 'user'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(length=256))
+    search_vector = Column(TSVectorType('name'))
+
+    applications = relationship('Application', back_populates='author')
+
+
 class Application(TableBase):
     # TODO: Currently ignoring but should maybe handle:
     # capabilities, changelog, compatibility, images, links?,
@@ -101,20 +112,21 @@ class Application(TableBase):
 
     id = Column(Integer, primary_key=True)
     guid = Column(GUID)
-    author = Column(String(length=120))
+    author_id = Column(Integer, ForeignKey('user.id'), nullable=False)
     title = Column(String(length=256))
     description = Column(String)
     hearts = Column(Integer, default=0)
     source = Column(String(length=256))
     create_ts = Column(ArrowType, default=arrow.utcnow)
     publish_ts = Column(ArrowType, default=arrow.utcnow)
-    search_vector = Column(TSVectorType('author', 'title', 'description'))
+    search_vector = Column(TSVectorType('title', 'description'))
 
+    author = relationship('User', back_populates='applications')
     collections = relationship('Collection', secondary=ApplicationCollection,
                                back_populates='applications')
     files = relationship('File', back_populates='application')
 
-    @validates('author', 'title', 'source')
+    @validates('title', 'source')
     def validate_code(self, key, value):
         max_len = getattr(self.__class__, key).prop.columns[0].type.length
         if value and len(value) > max_len:
@@ -168,6 +180,9 @@ class File(TableBase):
     image_height = Column(Integer, default=0)
 
     application = relationship('Application', back_populates='files')
+
+
+ft_search_vector = Application.search_vector | User.search_vector
 
 
 def get_connection(host, db, user, password):
