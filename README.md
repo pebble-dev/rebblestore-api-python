@@ -12,7 +12,7 @@ Next you'll need PostgreSQL. This should be installed via your OS's package mana
 If not, you may install from source.
 
 You'll need a `pebble` user (with password `pebble`) and a database to which this user has full rights (called `pebble_app`) running on the same machine as the server running this project.
-The URI, username, password and database will eventually be fully customizable, but this functionality has yet to be implemented.
+These values are all overwritable by building a proper config. This is explained below.
 
 Once a python 3.x binary is in your `$PATH` and PostgreSQL is running with the above mentioned user, password, and database, you should be able to install with pip:
 
@@ -24,6 +24,25 @@ pip install .
 
 *N.B:* If you intend to develop on this project `pip install -e .` may be more appropriate, as this installs the project 'editably'.
 See `pip install -h` for more information on this functionality.
+
+### Configuration
+
+Some application behavior is overridable via a config file.
+The default implementation for a debug server is at [rebble_store/app_debug.cfg](rebble_store/app_debug.cfg).
+
+This config file may be either edited directly (**NOT** recommended) or copied and then passed as the argument `--config` option when running `flask run`.
+
+Currently the following behavior is overridable from this file:
+
+* PostgreSQL configuration:
+
+- Host
+- Database
+- Username
+- Password
+
+* Server Name (This only affects the `list_routes` flask cli helper currently)
+
 
 ### Functionality
 
