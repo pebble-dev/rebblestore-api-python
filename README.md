@@ -36,10 +36,10 @@ Currently the following behavior is overridable from this file:
 
 * PostgreSQL configuration:
 
-- Host
-- Database
-- Username
-- Password
+    - Host
+    - Database
+    - Username
+    - Password
 
 * Server Name (This only affects the `list_routes` flask cli helper currently)
 
