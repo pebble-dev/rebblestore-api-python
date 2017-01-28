@@ -3,6 +3,7 @@ import json
 from multiprocessing.pool import ThreadPool
 import os
 import random
+import shutil
 import uuid
 
 import arrow
@@ -12,7 +13,7 @@ from PIL import Image
 import requests
 from unstdlib.standard.functools_ import memoized
 
-from ..models import Application, Collection, File, get_db, TableBase  # , Tag
+from ..models import Application, Collection, File, get_db, TableBase, User
 from .. import util
 
 
@@ -32,7 +33,6 @@ def _download_images(shot_source, shot_dir):
         for link in obj.values():
             links.append(link)
 
-    f_objs = []
     for idx, link in enumerate(links):
         response = _REQUESTS_SESSION.get(link)
         content_type = response.headers.get('Content-Type', None)
@@ -73,17 +73,25 @@ def _load_file(filename):
         return contents['data'][0]
 
 
-def _resolve_source(value):
-    if not value:
-        if os.path.isdir('data/'):
+def _resolve_data_source(value, default, param, must_exist=False):
+    if must_exist:
+        val_exists = os.path.isdir(value) if value else False
+        default_exists = os.path.isdir(default)
+
+        if val_exists:
+            path_to_use = value
+        elif default_exists:
             click.echo('==> No source provided')
-            click.echo('==> Folder ./data/ exists. Assuming that is our source'
-                       ' folder...')
-            return os.path.realpath('data/')
+            click.echo('==> Folder {} exists. Assuming that is our {}'
+                       ' folder...'.format(default, param))
+            path_to_use = default
         else:
-            raise click.BadParameter('Cannot find a suitable source directory.'
-                                     ' Please specify one with --source / -s')
-    return value
+            raise click.BadParameter('Cannot find a suitable {} '
+                                     'directory.'.format(param))
+    else:
+        path_to_use = value if value else default
+
+    return os.path.realpath(path_to_use)
 
 
 def process_downloads(path, content):
@@ -179,9 +187,9 @@ def _load_json_file(session, path, pbw_path=None):
 @click.option('--source', type=click.Path(exists=True,
                                           file_okay=False,
                                           dir_okay=True,
-                                          resolve_path=True),
-              callback=_resolve_source)
+                                          resolve_path=True))
 @with_appcontext
+# TODO: resolve source here, but can't be click cb
 def getimgs(source):
     _get_images(source)
 
@@ -201,8 +209,9 @@ def _get_images(source):
     pool.join()
 
 
-def _populate_dummy():
+def _populate_dummy(dest):
     """Generate dummy data for use in testing"""
+
     import rebble_store
     app = rebble_store.create_app()
 
@@ -213,19 +222,55 @@ def _populate_dummy():
 
     session = Session()
     apps = []
+    if os.path.isdir(dest):
+        click.echo('==> Found existing dummy dest; Deleting...')
+        shutil.rmtree(dest)
+    os.mkdir(dest)
+
     for i in range(0, 10):
-        # Start with 10 applications
+        author = User(name='author{}'.format(i))
+        session.add(author)
         app = Application(guid=uuid.uuid4(),
-                          author='author_{}'.format(i),
-                          title='aplication_{}'.format(i),
-                          description='This is application_{}'.format(i),
-                          hearts=i*10)
+                          author=author,
+                          title='application{}'.format(i),
+                          description='This is application{}'.format(i),
+                          hearts=i * 10)
         session.add(app)
         apps.append(app)
+        req_session = requests.session()
+
+        for ftype, _ in File.TYPES:
+            w = None
+            h = None
+
+            if ftype == 'pbw':
+                # pbw are the only non-image files atm
+                f_name = os.path.join(dest, '{}.pbw'.format(app.title))
+                with open(f_name, 'w') as f:
+                    f.write(app.title)
+            else:
+                f_name = os.path.join(dest, '{}_{}.gif'.format(app.title,
+                                                               ftype))
+                w = 600
+                h = 400
+                with open(f_name, 'wb') as f:
+                    resp = req_session.get(
+                        'https://dummyimage.com/{}x{}/000/fff'.format(w, h),
+                        params={'text': '{} {}'.format(app.title, ftype)})
+                    f.write(resp.content)
+
+            hsh = util.sha256_file(f_name)
+            f_obj = File(sha256=hsh,
+                         application=app,
+                         path=f_name,
+                         type=ftype,
+                         image_width=w,
+                         image_height=h)
+            session.add(f_obj)
 
     for i in range(0, 10):
         # now collections
-        coll_type = random.choice(Collection.TYPES)
+        coll_type = random.choice(Collection.TYPES)[0]
         featured = random.choice((True, False))
         our_apps = [apps[i], apps[9 - i]]
 
@@ -289,14 +334,23 @@ def _populate_real(source):
                                           dir_okay=True,
                                           resolve_path=True),
               help='Folder to utilize to populate the database. --dummy must '
-                   'be False for this option to make sense')
+                   'be False for this option to make ')
+@click.option('--dest', type=click.Path(file_okay=False,
+                                        dir_okay=True,
+                                        resolve_path=True),
+              help='Folder into which dummy data will be written. Will be '
+                   'overwritten unconditionally if --dummy is provided. '
+                   'default: ./dummy_data')
 @click.option('--dummy', is_flag=True,
               help='Whether or not to generate dummy data to '
               'populate the database')
 @with_appcontext
-def populatedb(source, dummy):
+def populatedb(source, dest, dummy):
     if dummy:
-        _populate_dummy()
+        dest = _resolve_data_source(dest, './dummy_data/', 'dest',
+                                    must_exist=False)
+        _populate_dummy(dest)
     else:
-        source = _resolve_source(source)
+        source = _resolve_data_source(source, './data/', 'source',
+                                      must_exist=True)
         _populate_real(source)
