@@ -18,7 +18,8 @@ setup(
                       'sqlalchemy-searchable',
                       'sqlalchemy-utils',
                       'tabulate',
-                      'webargs'],
+                      'webargs',
+                      'unstdlib'],
     entry_points={
         'flask.commands': [
             'populatedb=rebble_store.cli:populatedb',
