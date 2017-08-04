@@ -1,6 +1,7 @@
-# Pebble Store Replacement
+# Rebble Store Python API
+This is a Python implementation of the Rebble Store api.
 
-This is a Python implementation of the rebble store api.
+If you want to contribute join us on the [Pebble Dev Discord server](http://discord.gg/aRUAYFN), then head to `#appstore`.
 
 ## Usage
 
