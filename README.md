@@ -1,5 +1,6 @@
 # DEPRECATED: NO LONGER UNDER ACTIVE DEVELOPMENT.
-Due to lack of time and lack of desire to compete for resources with the [other implementation][https://github.com/pebble-dev/rebblestore-api], we are no longer updating this repository. Please have a look at the Golang repository if you wish to make contributions to the rebblestore api effort. 
+Due to lack of time and lack of desire to compete for resources with the [other, better implementation](https://github.com/pebble-dev/rebblestore-api), we are no longer updating this repository. 
+Please have a look at the [Golang repository](https://github.com/pebble-dev/rebblestore-api) if you wish to make contributions to the rebblestore api effort. 
 
 # Rebble Store Python API .
 This is a Python implementation of the Rebble Store api.
